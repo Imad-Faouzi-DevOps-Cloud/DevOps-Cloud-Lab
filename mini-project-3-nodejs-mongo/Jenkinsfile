@@ -5,13 +5,6 @@ pipeline {
         COMPOSE_PROJECT_NAME = "nodejsmongoapp"
     }
 
-    stages {
-        stage('Clone Repo') {
-            steps {
-                git 'https://github.com/fromation/miniprojects-.git'
-            }
-        }
-
         stage('Build & Start Containers') {
             steps {
                 dir('mini-project-3-nodejs-mongo') {
