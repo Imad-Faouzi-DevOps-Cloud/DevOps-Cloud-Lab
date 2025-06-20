@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    environment {
+        COMPOSE_PROJECT_NAME = "nodejsmongoapp"
+    }
+
+    stages {
+        stage('Clone Repo') {
+            steps {
+                git 'https://github.com/<your-username>/mini-project-3-nodejs-mongo.git'
+            }
+        }
+
+        stage('Build & Start Containers') {
+            steps {
+                sh 'docker-compose down || true'
+                sh 'docker-compose build'
+                sh 'docker-compose up -d'
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                sh '''
+                sleep 10
+                curl -f http://localhost:3000/ || exit 1
+                '''
+            }
+        }
+    }
+
+    post {
+        failure {
+            echo '❌ Build failed!'
+        }
+        success {
+            echo '✅ App deployed successfully!'
+        }
+    }
+}
+
