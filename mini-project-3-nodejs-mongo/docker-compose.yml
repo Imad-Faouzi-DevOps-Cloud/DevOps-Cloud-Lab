@@ -9,13 +9,21 @@ services:
       - MONGO_URI=mongodb://mongo:27017/test  # Env var for DB URI
     depends_on:
       - mongo           # Ensure MongoDB starts before this service
+    networks:
+      - app-network
 
   mongo:       # MongoDB container
     image: mongo:7      # Use official MongoDB image
     ports:
       - "27017:27017"   # Expose MongoDB port for dev purposes
+    networks:
+      - app-network
     volumes:
       - mongo-data:/data/db  # Persist Mongo data across restarts
 
 volumes:
   mongo-data:           # Named volume for MongoDB data persistence
+
+networks:
+  app-network:
+    driver: bridge
