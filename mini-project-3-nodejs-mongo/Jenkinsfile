@@ -5,6 +5,7 @@ pipeline {
         COMPOSE_PROJECT_NAME = "nodejsmongoapp"
     }
 
+    stages {
         stage('Build & Start Containers') {
             steps {
                 dir('mini-project-3-nodejs-mongo') {
@@ -17,11 +18,12 @@ pipeline {
         stage('Health Check') {
             steps {
                 sh '''
-                sleep 10
-                curl -f http://localhost:3000/ || exit 1
+                    sleep 10
+                    curl -f http://localhost:3000/ || exit 1
                 '''
             }
         }
+    }
 
     post {
         failure {
@@ -32,4 +34,3 @@ pipeline {
         }
     }
 }
-
