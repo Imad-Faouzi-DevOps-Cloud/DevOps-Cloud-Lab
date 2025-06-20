@@ -1,0 +1,21 @@
+version: '3.8'  # Define the Compose file format version
+
+services:
+  backend:     # Our Node.js app container
+    build: ./backend   # Build using Dockerfile in backend/
+    ports:
+      - "3000:3000"     # Map container port 3000 to host port 3000
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/test  # Env var for DB URI
+    depends_on:
+      - mongo           # Ensure MongoDB starts before this service
+
+  mongo:       # MongoDB container
+    image: mongo:7      # Use official MongoDB image
+    ports:
+      - "27017:27017"   # Expose MongoDB port for dev purposes
+    volumes:
+      - mongo-data:/data/db  # Persist Mongo data across restarts
+
+volumes:
+  mongo-data:           # Named volume for MongoDB data persistence
