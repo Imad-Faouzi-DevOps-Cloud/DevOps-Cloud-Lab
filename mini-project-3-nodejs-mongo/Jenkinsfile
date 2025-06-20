@@ -8,15 +8,16 @@ pipeline {
     stages {
         stage('Clone Repo') {
             steps {
-                git 'https://github.com/<your-username>/mini-project-3-nodejs-mongo.git'
+                git 'https://github.com/fromation/miniprojects-.git'
             }
         }
 
         stage('Build & Start Containers') {
             steps {
-                sh 'docker-compose down || true'
-                sh 'docker-compose build'
-                sh 'docker-compose up -d'
+                dir('mini-project-3-nodejs-mongo') {
+                    sh 'docker-compose build'
+                    sh 'docker-compose up -d'
+                }
             }
         }
 
