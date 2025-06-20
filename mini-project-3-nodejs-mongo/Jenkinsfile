@@ -9,8 +9,9 @@ pipeline {
         stage('Build & Start Containers') {
             steps {
                 dir('mini-project-3-nodejs-mongo') {
-                    sh 'docker-compose build'
-                    sh 'docker-compose up -d'
+                    sh 'docker compose build'
+                    sh 'docker compose up -d'
+
                 }
             }
         }
