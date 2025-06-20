@@ -1,0 +1,8 @@
+version: '3.8'  # Docker Compose file format version
+
+services:
+  web:           # Define a service named "web"
+    build: .     # Build the Docker image from the Dockerfile in this directory
+    ports:
+      - "5000:5000"  # Map host port 5000 to container port 5000
+
