@@ -8,14 +8,14 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        checkout scm
+        git url: 'https://github.com/fromation/miniprojects-.git', branch: 'main'
       }
     }
 
-    stage('Build Docker Images') {
+    stage('Build and Run Containers') {
       steps {
         dir('mini-project-4-flask-postgres') {
-          dockerCompose.up('--build -d') // build images and start containers detached
+          sh 'docker-compose up --build -d'
         }
       }
     }
@@ -23,16 +23,9 @@ pipeline {
     stage('Health Check Test') {
       steps {
         dir('mini-project-4-flask-postgres') {
-          // Wait for service to be ready and test health
           sh '''
-            echo "Waiting for Flask API to be ready..."
-            for i in {1..10}; do
-              curl -f http://localhost:5000/ && echo "✅ Health check passed." && exit 0
-              echo "Waiting..."
-              sleep 3
-            done
-            echo "❌ Health check failed."
-            exit 1
+            sleep 5
+            curl -f http://localhost:5000/ || exit 1
           '''
         }
       }
@@ -40,7 +33,7 @@ pipeline {
 
     stage('Deploy (Optional)') {
       steps {
-        echo '✅ In a real pipeline, this would deploy to staging/production.'
+        echo 'In real life: deploy to staging or production server'
       }
     }
   }
@@ -48,7 +41,7 @@ pipeline {
   post {
     always {
       dir('mini-project-4-flask-postgres') {
-        dockerCompose.down()  // stop and remove containers
+        sh 'docker-compose down'
       }
     }
   }
