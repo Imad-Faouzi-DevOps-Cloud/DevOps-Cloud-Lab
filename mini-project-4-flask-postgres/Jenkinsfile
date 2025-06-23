@@ -1,0 +1,56 @@
+pipeline {
+    agent any
+
+    environment {
+        COMPOSE_PROJECT_NAME = "flasktodo"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/fromation/miniprojects-.git', branch: 'main'
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                dir('mini-project-4-flask-postgres') {
+                    sh 'docker-compose build'
+                }
+            }
+        }
+
+        stage('Run Containers') {
+            steps {
+                dir('mini-project-4-flask-postgres') {
+                    sh 'docker-compose up -d'
+                }
+            }
+        }
+
+        stage('Health Check Test') {
+            steps {
+                dir('mini-project-4-flask-postgres') {
+                    sh '''
+                      sleep 5
+                      curl -f http://localhost:5000/ || exit 1
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy (Optional)') {
+            steps {
+                echo 'In real life: deploy to staging or production server'
+            }
+        }
+    }
+
+    post {
+        always {
+            dir('mini-project-4-flask-postgres') {
+                sh 'docker-compose down'
+            }
+        }
+    }
+}
