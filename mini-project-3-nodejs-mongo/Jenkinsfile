@@ -20,7 +20,7 @@ pipeline {
             steps {
 
                     sleep 10
-                    sh 'curl -f http://backend:3000/'
+                    sh 'curl -f http://localhost:3000/'
 
 
             }
