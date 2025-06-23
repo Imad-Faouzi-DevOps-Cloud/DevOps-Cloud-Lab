@@ -1,10 +1,5 @@
 pipeline {
-  agent {
-    docker {
-      image 'docker/compose:1.29.2'
-      args '-v /var/run/docker.sock:/var/run/docker.sock'
-    }
-  }
+  agent any
 
   environment {
     COMPOSE_PROJECT_NAME = "flasktodo"
@@ -13,7 +8,6 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        // This pulls the repo contents based on Jenkins project configuration
         checkout scm
       }
     }
@@ -21,15 +15,7 @@ pipeline {
     stage('Build Docker Images') {
       steps {
         dir('mini-project-4-flask-postgres') {
-          sh 'docker-compose build'
-        }
-      }
-    }
-
-    stage('Run Containers') {
-      steps {
-        dir('mini-project-4-flask-postgres') {
-          sh 'docker-compose up -d'
+          dockerCompose.up('--build -d') // build images and start containers detached
         }
       }
     }
@@ -37,6 +23,7 @@ pipeline {
     stage('Health Check Test') {
       steps {
         dir('mini-project-4-flask-postgres') {
+          // Wait for service to be ready and test health
           sh '''
             echo "Waiting for Flask API to be ready..."
             for i in {1..10}; do
@@ -61,7 +48,7 @@ pipeline {
   post {
     always {
       dir('mini-project-4-flask-postgres') {
-        sh 'docker-compose down'
+        dockerCompose.down()  // stop and remove containers
       }
     }
   }
