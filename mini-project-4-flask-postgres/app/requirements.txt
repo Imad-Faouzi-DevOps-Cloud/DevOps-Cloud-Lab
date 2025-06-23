@@ -1,0 +1,2 @@
+flask==2.3.2      # Flask web framework
+pytest==8.0.0     # Testing framework for Python

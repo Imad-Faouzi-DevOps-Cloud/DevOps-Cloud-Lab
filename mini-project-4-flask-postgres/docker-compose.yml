@@ -1,0 +1,28 @@
+version: '3.8'  # Docker Compose file format version
+
+services:
+  # Flask web app
+  web:
+    build: .  # Build the image using the Dockerfile in current directory
+    ports:
+      - "5000:5000"  # Map container port 5000 to host port 5000
+    depends_on:
+      - db  # Wait for the db service to start before running web
+    environment:
+      - DB_HOST=db        # Tell Flask to connect to db container
+      - DB_NAME=todo_db   # PostgreSQL database name
+      - DB_USER=postgres  # PostgreSQL user
+      - DB_PASS=postgres  # PostgreSQL password
+    volumes:
+      - ./app:/app  # Mount local app/ folder inside container (hot reload)
+
+  # PostgreSQL database
+  db:
+    image: postgres:14  # Use official PostgreSQL image
+    restart: always     # Restart container if it crashes
+    environment:
+      POSTGRES_DB: todo_db         # Initial DB name
+      POSTGRES_USER: postgres      # DB username
+      POSTGRES_PASSWORD: postgres  # DB password
+    ports:
+      - "5432:5432"  # Expose PostgreSQL port (optional for dev)
