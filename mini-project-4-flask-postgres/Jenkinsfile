@@ -1,56 +1,68 @@
 pipeline {
-    agent any
+  agent {
+    docker {
+      image 'docker/compose:1.29.2'
+      args '-v /var/run/docker.sock:/var/run/docker.sock'
+    }
+  }
 
-    environment {
-        COMPOSE_PROJECT_NAME = "flasktodo"
+  environment {
+    COMPOSE_PROJECT_NAME = "flasktodo"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        // This pulls the repo contents based on Jenkins project configuration
+        checkout scm
+      }
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git url: 'https://github.com/fromation/miniprojects-.git', branch: 'main'
-            }
+    stage('Build Docker Images') {
+      steps {
+        dir('mini-project-4-flask-postgres') {
+          sh 'docker-compose build'
         }
-
-        stage('Build Docker Images') {
-            steps {
-                dir('mini-project-4-flask-postgres') {
-                    sh 'docker-compose build'
-                }
-            }
-        }
-
-        stage('Run Containers') {
-            steps {
-                dir('mini-project-4-flask-postgres') {
-                    sh 'docker-compose up -d'
-                }
-            }
-        }
-
-        stage('Health Check Test') {
-            steps {
-                dir('mini-project-4-flask-postgres') {
-                    sh '''
-                      sleep 5
-                      curl -f http://localhost:5000/ || exit 1
-                    '''
-                }
-            }
-        }
-
-        stage('Deploy (Optional)') {
-            steps {
-                echo 'In real life: deploy to staging or production server'
-            }
-        }
+      }
     }
 
-    post {
-        always {
-            dir('mini-project-4-flask-postgres') {
-                sh 'docker-compose down'
-            }
+    stage('Run Containers') {
+      steps {
+        dir('mini-project-4-flask-postgres') {
+          sh 'docker-compose up -d'
         }
+      }
     }
+
+    stage('Health Check Test') {
+      steps {
+        dir('mini-project-4-flask-postgres') {
+          sh '''
+            echo "Waiting for Flask API to be ready..."
+            for i in {1..10}; do
+              curl -f http://localhost:5000/ && echo "✅ Health check passed." && exit 0
+              echo "Waiting..."
+              sleep 3
+            done
+            echo "❌ Health check failed."
+            exit 1
+          '''
+        }
+      }
+    }
+
+    stage('Deploy (Optional)') {
+      steps {
+        echo '✅ In a real pipeline, this would deploy to staging/production.'
+      }
+    }
+  }
+
+  post {
+    always {
+      dir('mini-project-4-flask-postgres') {
+        sh 'docker-compose down'
+      }
+    }
+  }
 }
