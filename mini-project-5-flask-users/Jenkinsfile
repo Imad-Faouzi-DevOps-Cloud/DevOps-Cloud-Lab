@@ -12,7 +12,7 @@ pipeline {
             }
         }
 
-    stage('Build Docker Image') {
+        stage('Build Docker Image') {
             steps {
                 dir('mini-project-5-flask-users') {
                     script {
@@ -24,8 +24,9 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                // Run your tests, assuming you have tests/ folder
-                sh 'pytest tests'
+                dir('mini-project-5-flask-users') {
+                    sh 'pytest tests'
+                }
             }
         }
 
@@ -34,11 +35,13 @@ pipeline {
                 branch 'main'
             }
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                    sh '''
-                      echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
-                      docker push $DOCKER_IMAGE
-                    '''
+                dir('mini-project-5-flask-users') {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+                        sh '''
+                          echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
+                          docker push $DOCKER_IMAGE
+                        '''
+                    }
                 }
             }
         }
@@ -48,7 +51,6 @@ pipeline {
                 branch 'main'
             }
             steps {
-                // Deploy commands, e.g., ssh to server and pull/run container, or trigger k8s deploy
                 echo 'Deploying...'
             }
         }
