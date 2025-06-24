@@ -12,10 +12,12 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+    stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build(DOCKER_IMAGE)
+                dir('mini-project-5-flask-users') {
+                    script {
+                        docker.build(DOCKER_IMAGE, '.')
+                    }
                 }
             }
         }
