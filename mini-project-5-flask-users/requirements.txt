@@ -7,3 +7,6 @@ psycopg2-binary
 python-dotenv
 
 flask-blueprints
+
+Werkzeug==2.3.8
+
