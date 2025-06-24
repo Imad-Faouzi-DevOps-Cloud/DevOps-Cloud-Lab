@@ -34,21 +34,17 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') {
-            when {
-                branch 'main'
-            }
-            steps {
-                dir('mini-project-5-flask-users') {
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                        sh '''
-                          echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
-                          docker push $DOCKER_IMAGE
-                        '''
-                    }
-                }
+stage('Push Docker Image') {
+    steps {
+        dir('mini-project-5-flask-users') {
+            withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+                sh 'docker build -t $DOCKERHUB_USER/mini-project-5-flask-users .'
+                sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+                sh 'docker push $DOCKERHUB_USER/mini-project-5-flask-users'
             }
         }
+    }
+}
 
         stage('Deploy') {
             when {
