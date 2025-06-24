@@ -1,0 +1,9 @@
+Flask==2.3.2
+pytest==7.4.0
+requests==2.31.0
+
+flask_sqlalchemy
+psycopg2-binary
+python-dotenv
+
+flask-blueprints
