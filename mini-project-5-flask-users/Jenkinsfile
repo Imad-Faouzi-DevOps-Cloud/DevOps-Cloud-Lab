@@ -25,7 +25,11 @@ pipeline {
         stage('Run Tests') {
             steps {
                 dir('mini-project-5-flask-users') {
-                    sh 'pytest tests'
+                    script {
+                        docker.image(DOCKER_IMAGE).inside {
+                            sh 'pytest tests'
+                        }
+                    }
                 }
             }
         }
