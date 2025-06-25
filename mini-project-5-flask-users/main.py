@@ -1,5 +1,5 @@
 # main.py
-
+import psycopg2
 from app import create_app  # Import the factory function
 
 # Create the Flask app instance using the factory
@@ -16,3 +16,9 @@ if __name__ == '__main__':
     # debug=True enables hot reload and debug info in dev environment
     app.run(host='0.0.0.0', port=8080, debug=True)
 
+conn = psycopg2.connect(
+    host="/cloudsql/devops-lab-464007:us-central1:flask-db-instance",
+    dbname="flaskdb",
+    user="flaskuser",
+    password="FlaskStrongPassword123"
+)
