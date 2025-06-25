@@ -14,5 +14,5 @@ def hello():
 if __name__ == '__main__':
     # host='0.0.0.0' allows access from outside the container or machine
     # debug=True enables hot reload and debug info in dev environment
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
 
