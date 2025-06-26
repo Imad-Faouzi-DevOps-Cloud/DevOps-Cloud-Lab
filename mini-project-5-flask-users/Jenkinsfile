@@ -2,7 +2,10 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "your-dockerhub-username/mini-project-5-flask-users"
+        DOCKER_IMAGE = "your-dockerhub-username/mini-project-5-flask-users:${versionTag}"
+        def isTagBuild = env.GIT_BRANCH?.startsWith("refs/tags/")
+        def versionTag = isTagBuild ? env.GIT_BRANCH.replace('refs/tags/', '') : 'latest'
+
     }
 
     stages {
