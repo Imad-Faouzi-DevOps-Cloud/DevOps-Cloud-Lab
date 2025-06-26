@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_REPO = "your-dockerhub-username/mini-project-5-flask-users"
+        IMAGE_NAME = "mini-project-5-flask-users"
     }
 
     stages {
@@ -12,24 +12,13 @@ pipeline {
             }
         }
 
-        stage('Set Build Info') {
-            steps {
-                script {
-                    def isTagBuild = env.GIT_BRANCH?.startsWith("refs/tags/")
-                    def versionTag = isTagBuild ? env.GIT_BRANCH.replace('refs/tags/', '') : 'latest'
-                    env.VERSION_TAG = versionTag
-                    env.DOCKER_IMAGE = "${env.DOCKERHUB_REPO}:${env.VERSION_TAG}"
-                    echo "Build triggered by: ${env.GIT_BRANCH}"
-                    echo "Version tag: ${env.VERSION_TAG}"
-                }
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 dir('mini-project-5-flask-users') {
-                    script {
-                        docker.build(env.DOCKER_IMAGE, '.')
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+                        script {
+                            docker.build("${DOCKERHUB_USER}/${IMAGE_NAME}", '.')
+                        }
                     }
                 }
             }
@@ -38,9 +27,11 @@ pipeline {
         stage('Run Tests') {
             steps {
                 dir('mini-project-5-flask-users') {
-                    script {
-                        docker.image(env.DOCKER_IMAGE).inside {
-                            sh 'pytest tests'
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+                        script {
+                            docker.image("${DOCKERHUB_USER}/${IMAGE_NAME}").inside {
+                                sh 'pytest tests'
+                            }
                         }
                     }
                 }
@@ -52,7 +43,7 @@ pipeline {
                 dir('mini-project-5-flask-users') {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
                         sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
-                        sh "docker push ${env.DOCKER_IMAGE}"
+                        sh 'docker push $DOCKERHUB_USER/mini-project-5-flask-users'
                     }
                 }
             }
