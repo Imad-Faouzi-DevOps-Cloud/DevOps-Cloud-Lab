@@ -1,24 +1,29 @@
-# main.py
+import os
 import psycopg2
-from app import create_app  # Import the factory function
+from app import create_app
 
-# Create the Flask app instance using the factory
+# Create the Flask app
 app = create_app()
 
-# Define a simple root route for health check or welcome message
 @app.route('/')
 def hello():
-    return 'Hello, DevOps World!'  # Simple response to verify the server is running
+    return 'Hello, DevOps World!'
 
-# Run the Flask development server if this file is executed directly
 if __name__ == '__main__':
-    # host='0.0.0.0' allows access from outside the container or machine
-    # debug=True enables hot reload and debug info in dev environment
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    # Use the Cloud Run-assigned port
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
 
-conn = psycopg2.connect(
-    host="/cloudsql/devops-lab-464007:us-central1:flask-db-instance",
-    dbname="flaskdb",
-    user="flaskuser",
-    password="FlaskStrongPassword123"
-)
+# OPTIONAL: Direct connection to Cloud SQL (if you're not using SQLAlchemy)
+# Usually handled inside your app with SQLAlchemy if configured via DATABASE_URL
+if os.environ.get("GAE_ENV", "").startswith("standard") or os.environ.get("K_SERVICE"):
+    try:
+        conn = psycopg2.connect(
+            host="/cloudsql/devops-lab-464007:us-central1:flask-db-instance",
+            dbname="flaskdb",
+            user="flaskuser",
+            password="FlaskStrongPassword123"
+        )
+        print("Connected to Cloud SQL.")
+    except Exception as e:
+        print("Failed to connect to Cloud SQL:", e)
