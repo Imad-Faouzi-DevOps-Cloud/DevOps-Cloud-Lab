@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     environment {
-        // Set a default; override later
-        DOCKER_IMAGE = ''
+        DOCKERHUB_REPO = "your-dockerhub-username/mini-project-5-flask-users"
     }
 
     stages {
@@ -19,7 +18,7 @@ pipeline {
                     def isTagBuild = env.GIT_BRANCH?.startsWith("refs/tags/")
                     def versionTag = isTagBuild ? env.GIT_BRANCH.replace('refs/tags/', '') : 'latest'
                     env.VERSION_TAG = versionTag
-                    env.DOCKER_IMAGE = "${env.DOCKERHUB_USER}/mini-project-5-flask-users:${versionTag}"
+                    env.DOCKER_IMAGE = "${env.DOCKERHUB_REPO}:${env.VERSION_TAG}"
                     echo "Build triggered by: ${env.GIT_BRANCH}"
                     echo "Version tag: ${env.VERSION_TAG}"
                 }
@@ -52,7 +51,6 @@ pipeline {
             steps {
                 dir('mini-project-5-flask-users') {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                        sh "docker build -t ${env.DOCKER_IMAGE} ."
                         sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
                         sh "docker push ${env.DOCKER_IMAGE}"
                     }
