@@ -69,7 +69,7 @@ stage('Push Docker Image') {
                 branch 'main'
             }
             steps {
-                gcloud config set project devops-lab-464007
+                sh  "gcloud config set project devops-lab-464007"
                 sh "gcloud run deploy flask-users-service \
                 --image gcr.io/devops-lab-464007/${IMAGE_NAME}:v1.1.0 \
                 --platform managed \
