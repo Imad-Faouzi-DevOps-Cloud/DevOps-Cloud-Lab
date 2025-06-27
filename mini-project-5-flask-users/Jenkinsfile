@@ -44,6 +44,9 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
                         sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
                         sh 'docker push $DOCKERHUB_USER/mini-project-5-flask-users'
+                        sh "gcloud auth configure-docker"
+                        sh "docker tag ${DOCKERHUB_USER}/${IMAGE_NAME} gcr.io/devops-lab-464007/${IMAGE_NAME}:v1.1.0"
+                        sh "docker push gcr.io/devops-lab-464007/${IMAGE_NAME}"
                     }
                 }
             }
@@ -54,7 +57,11 @@ pipeline {
                 branch 'main'
             }
             steps {
-                echo 'Deploying...'
+                sh "gcloud run deploy flask-users-service \
+                --image gcr.io/devops-lab-464007/${IMAGE_NAME}:v1.1.0 \
+                --platform managed \
+                --region us-central1 \
+                --allow-unauthenticated"
             }
         }
     }
