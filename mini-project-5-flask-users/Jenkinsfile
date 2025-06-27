@@ -38,24 +38,29 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') {
-            steps {
-                dir('mini-project-5-flask-users') {
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                        sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
-                        sh 'docker push $DOCKERHUB_USER/mini-project-5-flask-users'
-                    }
-                    withCredentials([file(credentialsId: 'GCR_CREDENTIALS', variable: 'GCLOUD_KEY')]) {
-                        sh "gcloud auth configure-docker"
-                        sh "docker tag ${DOCKERHUB_USER}/${IMAGE_NAME} gcr.io/devops-lab-464007/${IMAGE_NAME}:v1.1.0"
-                        sh "docker push gcr.io/devops-lab-464007/${IMAGE_NAME}"
-                        sh "gcloud auth activate-service-account --key-file=$GCLOUD_KEY"
-                        sh " gcloud auth configure-docker --quiet"
-                        sh  "docker push gcr.io/devops-lab-464007/mini-project-5-flask-users"
-                    }
+stage('Push Docker Image') {
+    steps {
+        dir('mini-project-5-flask-users') {
+            withCredentials([
+                usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS'),
+                file(credentialsId: 'GCR_CREDENTIALS', variable: 'GCLOUD_KEY')
+            ]) {
+                script {
+                    sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+                    sh 'docker push $DOCKERHUB_USER/mini-project-5-flask-users'
+
+                    sh "gcloud auth activate-service-account --key-file=$GCLOUD_KEY"
+                    sh "gcloud auth configure-docker"
+                    
+                    // Use DOCKERHUB_USER now safely
+                    sh "docker tag ${DOCKERHUB_USER}/${IMAGE_NAME} gcr.io/devops-lab-464007/${IMAGE_NAME}:v1.1.0"
+                    sh "docker push gcr.io/devops-lab-464007/${IMAGE_NAME}"
                 }
             }
         }
+    }
+}
+
 
         stage('Deploy') {
             when {
