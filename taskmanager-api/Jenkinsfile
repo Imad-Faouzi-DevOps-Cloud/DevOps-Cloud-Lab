@@ -1,0 +1,146 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "taskmanager-api"
+        DOCKER_REGISTRY = "docker.io"
+        GCP_PROJECT = "devops-lab-464007"
+        GCP_CLUSTER = "your-gke-cluster"
+        GCP_ZONE = "us-central1-a"
+        DEPLOY_NAMESPACE = "default"
+        VERSION = "${env.GIT_COMMIT.take(7)}"  // short commit hash for tagging
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        ansiColor('xterm')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Setup Python Env & Cache') {
+            steps {
+                dir('taskmanager-api') {
+                    sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                    '''
+                }
+            }
+        }
+
+        stage('Static Code Analysis') {
+            steps {
+                dir('taskmanager-api') {
+                    sh '''
+                    . venv/bin/activate
+                    flake8 app tests
+                    '''
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            parallel {
+                stage('Unit Tests') {
+                    steps {
+                        dir('taskmanager-api') {
+                            sh '''
+                            . venv/bin/activate
+                            pytest tests/unit --maxfail=1 --disable-warnings -q
+                            '''
+                        }
+                    }
+                }
+                stage('Integration Tests') {
+                    steps {
+                        dir('taskmanager-api') {
+                            sh '''
+                            . venv/bin/activate
+                            pytest tests/integration --maxfail=1 --disable-warnings -q
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                dir('taskmanager-api') {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+                        script {
+                            dockerImage = docker.build("${DOCKERHUB_USER}/${IMAGE_NAME}:${VERSION}", '.')
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                dir('taskmanager-api') {
+                    withCredentials([
+                        usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS'),
+                        file(credentialsId: 'GCR_CREDENTIALS', variable: 'GCLOUD_KEY')
+                    ]) {
+                        script {
+                            sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+                            sh "docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${VERSION}"
+
+                            sh 'gcloud auth activate-service-account --key-file="$GCLOUD_KEY"'
+                            sh 'gcloud auth configure-docker'
+
+                            def gcrImage = "gcr.io/${GCP_PROJECT}/${IMAGE_NAME}:${VERSION}"
+                            sh "docker tag ${DOCKERHUB_USER}/${IMAGE_NAME}:${VERSION} ${gcrImage}"
+                            sh "docker push ${gcrImage}"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to GKE') {
+            when {
+                branch 'main'
+            }
+            steps {
+                withCredentials([file(credentialsId: 'GKE_KUBECONFIG', variable: 'KUBECONFIG')]) {
+                    script {
+                        sh """
+                        gcloud config set project ${GCP_PROJECT}
+                        gcloud container clusters get-credentials ${GCP_CLUSTER} --zone ${GCP_ZONE}
+                        kubectl config use-context gke_${GCP_PROJECT}_${GCP_ZONE}_${GCP_CLUSTER}
+                        
+                        # Update image in your k8s deployment YAML or do a kubectl set image directly:
+                        kubectl set image deployment/taskmanager-api taskmanager-api=${DOCKERHUB_USER}/${IMAGE_NAME}:${VERSION} -n ${DEPLOY_NAMESPACE}
+                        kubectl rollout status deployment/taskmanager-api -n ${DEPLOY_NAMESPACE}
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo "Build, test, and deploy completed successfully!"
+            // Add notification steps here (e.g., Slack/email)
+        }
+        failure {
+            echo "Pipeline failed. Please check the logs."
+            // Add failure notification here
+        }
+    }
+}
+
