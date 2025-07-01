@@ -5,10 +5,10 @@ pipeline {
         IMAGE_NAME = "taskmanager-api"
         DOCKER_REGISTRY = "docker.io"
         GCP_PROJECT = "devops-lab-464007"
-        GCP_CLUSTER = "your-gke-cluster"
-        GCP_ZONE = "us-central1-a"
+        GCP_CLUSTER = "taskmanager-cluster"        // ✅ Your actual GKE cluster
+        GCP_ZONE = "us-central1-f"                 // ✅ Your actual zone
         DEPLOY_NAMESPACE = "default"
-        VERSION = "${env.GIT_COMMIT.take(7)}"  // short commit hash for tagging
+        VERSION = "${env.GIT_COMMIT.take(7)}"      // short commit hash for tagging
     }
 
     options {
@@ -112,17 +112,19 @@ pipeline {
                 branch 'main'
             }
             steps {
-                withCredentials([file(credentialsId: 'GKE_KUBECONFIG', variable: 'KUBECONFIG')]) {
+                withCredentials([file(credentialsId: 'GKE_CREDENTIALS', variable: 'GCLOUD_KEY')]) {
                     script {
-                        sh """
+                        sh '''
+                        gcloud auth activate-service-account --key-file=$GCLOUD_KEY
                         gcloud config set project ${GCP_PROJECT}
                         gcloud container clusters get-credentials ${GCP_CLUSTER} --zone ${GCP_ZONE}
-                        kubectl config use-context gke_${GCP_PROJECT}_${GCP_ZONE}_${GCP_CLUSTER}
-                        
-                        # Update image in your k8s deployment YAML or do a kubectl set image directly:
+
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
+
                         kubectl set image deployment/taskmanager-api taskmanager-api=${DOCKERHUB_USER}/${IMAGE_NAME}:${VERSION} -n ${DEPLOY_NAMESPACE}
                         kubectl rollout status deployment/taskmanager-api -n ${DEPLOY_NAMESPACE}
-                        """
+                        '''
                     }
                 }
             }
@@ -135,12 +137,9 @@ pipeline {
         }
         success {
             echo "Build, test, and deploy completed successfully!"
-            // Add notification steps here (e.g., Slack/email)
         }
         failure {
             echo "Pipeline failed. Please check the logs."
-            // Add failure notification here
         }
     }
 }
-
