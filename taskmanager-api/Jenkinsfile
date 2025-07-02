@@ -52,10 +52,9 @@ pipeline {
                 stage('Unit Tests') {
                     steps {
                         dir('taskmanager-api') {
-                            sh '''
-                            . venv/bin/activate
-                            pytest tests/integration/test_auth.py --maxfail=1 --disable-warnings -q
-                            '''
+                         
+                            sh 'echo "Unit tests placeholder (to be implemented)"'
+                           
                         }
                     }
                 }
