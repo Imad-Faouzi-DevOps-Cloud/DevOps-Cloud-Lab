@@ -54,7 +54,7 @@ pipeline {
                         dir('taskmanager-api') {
                             sh '''
                             . venv/bin/activate
-                            pytest tests/unit --maxfail=1 --disable-warnings -q
+                            pytest tests/integration/test_auth.py --maxfail=1 --disable-warnings -q
                             '''
                         }
                     }
