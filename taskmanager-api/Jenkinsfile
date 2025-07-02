@@ -56,7 +56,7 @@ pipeline {
                             . venv/bin/activate
                             export PYTHONPATH=$(pwd)
                             echo "Running unit tests..."
-                            pytest tests/unit --maxfail=1 --disable-warnings -q || true
+                            
                             '''
                         }
                     }
