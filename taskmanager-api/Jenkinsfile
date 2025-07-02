@@ -5,10 +5,10 @@ pipeline {
         IMAGE_NAME = "taskmanager-api"
         DOCKER_REGISTRY = "docker.io"
         GCP_PROJECT = "devops-lab-464007"
-        GCP_CLUSTER = "taskmanager-cluster"        // ✅ Your actual GKE cluster
-        GCP_ZONE = "us-central1-f"                 // ✅ Your actual zone
+        GCP_CLUSTER = "taskmanager-cluster"
+        GCP_ZONE = "us-central1-f"
         DEPLOY_NAMESPACE = "default"
-        VERSION = "${env.GIT_COMMIT.take(7)}"      // short commit hash for tagging
+        VERSION = "${env.GIT_COMMIT.take(7)}"
     }
 
     options {
@@ -22,7 +22,7 @@ pipeline {
             }
         }
 
-        stage('Setup Python Env & Cache') {
+        stage('Setup Python Environment') {
             steps {
                 dir('taskmanager-api') {
                     sh '''
@@ -41,7 +41,7 @@ pipeline {
                     sh '''
                     . venv/bin/activate
                     echo "Running flake8..."
-                    flake8 app tests || true  # prevent failure temporarily for debugging
+                    flake8 app tests || true  # avoid failing pipeline for now
                     '''
                 }
             }
@@ -52,26 +52,47 @@ pipeline {
                 stage('Unit Tests') {
                     steps {
                         dir('taskmanager-api') {
-                         
-                            sh 'echo "Unit tests placeholder (to be implemented)"'
-                           
+                            sh '''
+                            . venv/bin/activate
+                            export PYTHONPATH=$(pwd)
+                            echo "Running unit tests..."
+                            pytest tests/unit --maxfail=1 --disable-warnings -q || true
+                            '''
                         }
                     }
                 }
+
                 stage('Integration Tests') {
                     steps {
                         dir('taskmanager-api') {
-                        withCredentials([
-                            string(credentialsId: 'DATABASE_URL', variable: 'DATABASE_URL'),
-                             string(credentialsId: 'JWT_SECRET_KEY', variable: 'JWT_SECRET_KEY')
-                            ]) {
-                            sh '''
-                            . venv/bin/activate
-                            PYTHONPATH=. pytest tests/integration/test_auth.py --maxfail=1 --disable-warnings -q
-                            '''
-                        }    
+                            script {
+                                try {
+                                    sh '''
+                                    echo "Starting PostgreSQL for integration tests..."
+                                    docker run -d \
+                                      --name test-postgres \
+                                      -e POSTGRES_USER=testuser \
+                                      -e POSTGRES_PASSWORD=testpass \
+                                      -e POSTGRES_DB=testdb \
+                                      -p 5432:5432 \
+                                      postgres:13
+
+                                    echo "Waiting for PostgreSQL to become ready..."
+                                    until pg_isready -h localhost -p 5432; do
+                                      sleep 1
+                                    done
+
+                                    echo "Running integration tests..."
+                                    . venv/bin/activate
+                                    export PYTHONPATH=$(pwd)
+                                    DATABASE_URL="postgresql://testuser:testpass@localhost:5432/testdb" \
+                                    pytest tests/integration --maxfail=1 --disable-warnings -q
+                                    '''
+                                } finally {
+                                    sh 'docker rm -f test-postgres || true'
+                                }
+                            }
                         }
-                    
                     }
                 }
             }
@@ -100,7 +121,7 @@ pipeline {
                             sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
                             sh "docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${VERSION}"
 
-                            sh 'gcloud auth activate-service-account --key-file="$GCLOUD_KEY"'
+                            sh 'gcloud auth activate-service-account --key-file=$GCLOUD_KEY'
                             sh 'gcloud auth configure-docker'
 
                             def gcrImage = "gcr.io/${GCP_PROJECT}/${IMAGE_NAME}:${VERSION}"
@@ -141,10 +162,10 @@ pipeline {
             cleanWs()
         }
         success {
-            echo "Build, test, and deploy completed successfully!"
+            echo "✅ Build, test, and deploy completed successfully!"
         }
         failure {
-            echo "Pipeline failed. Please check the logs."
+            echo "❌ Pipeline failed. Please check the logs."
         }
     }
 }
