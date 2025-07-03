@@ -29,3 +29,9 @@ spec:
             port: 80
           initialDelaySeconds: 15
           periodSeconds: 20
+
+          env:
+            - name: DATABASE_URL
+              value: "your_postgres_url_here"
+            - name: JWT_SECRET_KEY
+              value: "your_secret_key_here"
