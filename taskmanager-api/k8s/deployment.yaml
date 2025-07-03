@@ -14,9 +14,9 @@ spec:
     spec:
       containers:
       - name: taskmanager-api
-        image: gcr.io/devops-lab-464007/mini-project-5-flask-users:v1.1.0
+        image: gcr.io/devops-lab-464007/taskmanager-api/taskmanager-api:0b77f1c
         ports:
-        - containerPort: 80
+        - containerPort: 8000
         env:
           - name: DATABASE_URL
             value: "postgresql://postgres:postgres@db:5432/postgres"
