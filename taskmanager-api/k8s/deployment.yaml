@@ -17,6 +17,11 @@ spec:
         image: gcr.io/devops-lab-464007/mini-project-5-flask-users:v1.1.0
         ports:
         - containerPort: 80
+        env:
+          - name: DATABASE_URL
+           value: "your_postgres_url_here"
+          - name: JWT_SECRET_KEY
+           value: "your_secret_key_here"
         readinessProbe:
           httpGet:
             path: /health
@@ -30,8 +35,3 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
 
-          env:
-            - name: DATABASE_URL
-              value: "your_postgres_url_here"
-            - name: JWT_SECRET_KEY
-              value: "your_secret_key_here"
