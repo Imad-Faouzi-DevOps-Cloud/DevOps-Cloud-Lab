@@ -148,8 +148,8 @@ pipeline {
 
                         kubectl apply -f k8s/deployment.yaml
                         kubectl apply -f k8s/service.yaml
-
-                        kubectl set image deployment/taskmanager-api taskmanager-api=${DOCKERHUB_USER}/${IMAGE_NAME}:${VERSION} -n ${DEPLOY_NAMESPACE}
+        
+                        kubectl set image deployment/taskmanager-api taskmanager-api=gcr.io/devops-lab-464007/${IMAGE_NAME}:${VERSION} -n ${DEPLOY_NAMESPACE}
                         kubectl rollout status deployment/taskmanager-api -n ${DEPLOY_NAMESPACE}
                         '''
                     }
