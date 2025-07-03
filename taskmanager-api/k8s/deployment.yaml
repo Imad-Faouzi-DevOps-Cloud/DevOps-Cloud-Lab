@@ -19,9 +19,9 @@ spec:
         - containerPort: 80
         env:
           - name: DATABASE_URL
-            value: "your_postgres_url_here"
+            value: "postgresql://postgres:postgres@db:5432/postgres"
           - name: JWT_SECRET_KEY
-            value: "your_secret_key_here"
+            value: "supersecretkey"
         readinessProbe:
           httpGet:
             path: /health
