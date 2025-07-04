@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: taskmanager-api
-        image: gcr.io/devops-lab-464007/taskmanager-api:latest
+        image: gcr.io/devops-lab-464007/taskmanager-api
         ports:
         - containerPort: 8000
         env:
