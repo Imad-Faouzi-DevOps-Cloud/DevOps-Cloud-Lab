@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: taskmanager-api
-        image: gcr.io/devops-lab-464007/taskmanager-api:0b77f1c
+        image: gcr.io/devops-lab-464007/taskmanager-api:latest
         ports:
         - containerPort: 8000
         env:
@@ -25,12 +25,12 @@ spec:
         readinessProbe:
           httpGet:
             path: /health
-            port: 80
+            port: 8000
           initialDelaySeconds: 5
           periodSeconds: 10
         livenessProbe:
           httpGet:
             path: /health
-            port: 80
+            port: 8000
           initialDelaySeconds: 15
           periodSeconds: 20
