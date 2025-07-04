@@ -4,6 +4,7 @@ metadata:
   name: taskmanager-api
 spec:
   replicas: 2
+  revisionHistoryLimit: 1
   selector:
     matchLabels:
       app: taskmanager-api
