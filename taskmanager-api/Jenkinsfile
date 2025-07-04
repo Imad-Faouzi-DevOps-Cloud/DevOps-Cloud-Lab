@@ -139,26 +139,32 @@ pipeline {
             }
             steps {
                 dir('taskmanager-api') {
-                withCredentials([file(credentialsId: 'GKE_CREDENTIALS', variable: 'GCLOUD_KEY')]) {
-                    script {
-                        sh '''
-                        gcloud auth activate-service-account --key-file=$GCLOUD_KEY
-                        gcloud config set project ${GCP_PROJECT}
-                        gcloud container clusters get-credentials ${GCP_CLUSTER} --zone ${GCP_ZONE}
-
-                        kubectl apply -f k8s/deployment.yaml
-                        kubectl apply -f k8s/service.yaml
+                    withCredentials([file(credentialsId: 'GKE_CREDENTIALS', variable: 'GCLOUD_KEY')]) {
+                        script {
+                            sh '''#!/bin/bash
+                            set -e  # Exit immediately if a command exits with a non-zero status
         
-                        kubectl set image deployment/taskmanager-api taskmanager-api=gcr.io/devops-lab-464007/taskmanager-api:${GIT_COMMIT:0:7}
-
-                        kubectl rollout status deployment/taskmanager-api
-                        '''
+                            IMAGE_TAG=${GIT_COMMIT:0:7}
+        
+                            echo "Using image tag: $IMAGE_TAG"
+        
+                            gcloud auth activate-service-account --key-file=$GCLOUD_KEY
+                            gcloud config set project ${GCP_PROJECT}
+                            gcloud container clusters get-credentials ${GCP_CLUSTER} --zone ${GCP_ZONE}
+        
+                            kubectl apply -f k8s/deployment.yaml
+                            kubectl apply -f k8s/service.yaml
+        
+                            kubectl set image deployment/taskmanager-api taskmanager-api=gcr.io/${GCP_PROJECT}/taskmanager-api:$IMAGE_TAG
+        
+                            kubectl rollout status deployment/taskmanager-api
+                            '''
+                        }
                     }
-                }
                 }
             }
         }
-    }
+
 
     post {
         always {
