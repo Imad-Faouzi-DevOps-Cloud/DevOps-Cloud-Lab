@@ -18,3 +18,7 @@ app.include_router(tickets.router, prefix="/tickets", tags=["tickets"])
 def root():
     return {"message": "Support Ticket API is running."}
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
