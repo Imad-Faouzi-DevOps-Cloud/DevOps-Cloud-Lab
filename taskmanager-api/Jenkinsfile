@@ -160,10 +160,12 @@ pipeline {
                             kubectl rollout status deployment/taskmanager-api
 
                             # Delete old ReplicaSets (keep only the latest 1)
+                            # Prevent failure if nothing to delete
                             kubectl get rs -l app=taskmanager-api --sort-by=.metadata.creationTimestamp \
+                              | awk 'NR>1 {print $1}' \
                               | head -n -1 \
-                              | awk '{print $1}' \
-                              | xargs -r kubectl delete rs
+                              | xargs -r kubectl delete rs || true
+
 
                             '''
                         }
