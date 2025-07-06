@@ -1,30 +1,37 @@
+# Define the Deployment for the PostgreSQL database
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
 spec:
-  replicas: 1
+  replicas: 1  # Run only one DB pod (typical for dev/test; not HA)
   selector:
     matchLabels:
-      app: postgres
+      app: postgres  # Match pods with this label
+
   template:
     metadata:
       labels:
-        app: postgres
+        app: postgres  # This label ties the pod to the deployment
+
     spec:
       containers:
-      - name: postgres
-        image: postgres:15
-        env:
-        - name: POSTGRES_USER
-          value: "postgres"
-        - name: POSTGRES_PASSWORD
-          value: "postgres"
-        ports:
-        - containerPort: 5432
-        volumeMounts:
-        - name: postgres-storage
-          mountPath: /var/lib/postgresql/data
+        - name: postgres
+          image: postgres:15  # Official PostgreSQL image (always pin version for reproducibility)
+          
+          env:
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              value: "postgres"  # Replace with Kubernetes Secret in real environments
+
+          ports:
+            - containerPort: 5432  # Default PostgreSQL port
+
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data  # Where Postgres stores its data
+
       volumes:
-      - name: postgres-storage
-        emptyDir: {}  # Use a persistent volume here in production!
+        - name: postgres-storage
+          emptyDir: {}  # ⚠️ Data will be lost on pod restart — use PersistentVolumeClaim in production
