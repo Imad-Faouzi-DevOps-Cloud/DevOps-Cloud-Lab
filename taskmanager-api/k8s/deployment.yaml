@@ -1,49 +1,58 @@
+# Define a Kubernetes Service to expose the FastAPI app
 apiVersion: v1
 kind: Service
 metadata:
   name: taskmanager-api-service
 spec:
-  type: LoadBalancer
+  type: LoadBalancer  # Expose externally via cloud load balancer (used in GCP, AWS, etc.)
   selector:
-    app: taskmanager-api
+    app: taskmanager-api  # Link this service to the pods with matching labels
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 8000
+      port: 80  # Expose port 80 outside
+      targetPort: 8000  # Redirect to container port running FastAPI
 
+---
 
+# Define the Kubernetes Deployment that runs the application pods
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: taskmanager-api
 spec:
-  replicas: 2
-  revisionHistoryLimit: 1
+  replicas: 2  # Run two pods for high availability and basic load balancing
+  revisionHistoryLimit: 1  # Keep only the last version of deployment history (less disk usage)
+
   selector:
     matchLabels:
-      app: taskmanager-api
+      app: taskmanager-api  # Target pods that have this label
+
   template:
     metadata:
       labels:
-        app: taskmanager-api
+        app: taskmanager-api  # Pods created by this deployment will have this label
+
     spec:
       containers:
       - name: taskmanager-api
-        image: gcr.io/devops-lab-464007/taskmanager-api
+        image: gcr.io/devops-lab-464007/taskmanager-api  # Pull image from Google Container Registry (GCP)
         ports:
-        - containerPort: 8000
+        - containerPort: 8000  # Match the app's internal listening port
+
         env:
           - name: DATABASE_URL
-            value: "postgresql://postgres:postgres@db:5432/postgres"
+            value: "postgresql://postgres:postgres@db:5432/postgres"  # DB connection string
           - name: JWT_SECRET_KEY
-            value: "supersecretkey"
-        readinessProbe:
+            value: "supersecretkey"  # Secret for auth (ideally should be a Kubernetes Secret)
+
+        readinessProbe:  # Check if the app is ready to receive traffic
           httpGet:
             path: /health
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 10
-        livenessProbe:
+
+        livenessProbe:  # Check if the app is still alive, or restart the pod
           httpGet:
             path: /health
             port: 8000
