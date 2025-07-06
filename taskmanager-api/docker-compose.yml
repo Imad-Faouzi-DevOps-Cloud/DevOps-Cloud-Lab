@@ -1,38 +1,39 @@
-version: '3.9'
+version: '3.9'  # Use modern Docker Compose syntax for better features and compatibility
 
 services:
   db:
-    image: postgres:15
-    restart: always
+    image: postgres:15  # Use official Postgres image (stable and production-ready)
+    restart: always  # Automatically restart DB if the container crashes
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres  # Define DB user
+      POSTGRES_PASSWORD: postgres  # Define DB password
     ports:
-      - "5432:5432"
+      - "5432:5432"  # Expose Postgres on localhost for dev tools
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data  # Persist DB data outside the container
 
   app:
-    build: .
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    build: .  # Build image from local Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload  # Run FastAPI in dev mode with auto-reload
     ports:
-      - "8000:8000"
+      - "8000:8000"  # Expose app port to host
     env_file:
-      - .env
+      - .env  # Load environment variables from .env file
     depends_on:
-      - db
+      - db  # Wait for database container before starting
     volumes:
-      - .:/app
+      - .:/app  # Mount current code folder inside container for live code editing
 
   test:
-    build: .
+    build: .  # Use same Docker image as the app
     depends_on:
-      - db
-    command: pytest tests/
+      - db  # Ensure DB is ready before tests run
+    command: pytest tests/  # Run integration tests
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
-      PYTHONPATH: /app
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres  # Set DB URL for tests
+      PYTHONPATH: /app  # Let pytest detect internal app modules
     volumes:
-      - .:/app
+      - .:/app  # Mount codebase for test access
+
 volumes:
-  pgdata:
+  pgdata:  # Named volume for Postgres persistence
