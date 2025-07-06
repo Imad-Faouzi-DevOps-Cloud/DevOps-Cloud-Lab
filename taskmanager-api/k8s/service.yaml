@@ -3,10 +3,10 @@ kind: Service
 metadata:
   name: taskmanager-api-service
 spec:
-  type: LoadBalancer
+  type: LoadBalancer  # Let cloud provider expose this service to the internet
   selector:
     app: taskmanager-api
   ports:
     - protocol: TCP
-      port: 8000
-      targetPort: 8000
+      port: 80         # Browser-friendly port (standard HTTP)
+      targetPort: 8000 # Forward to container's port running FastAPI
