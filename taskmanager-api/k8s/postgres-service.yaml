@@ -1,10 +1,11 @@
+# Define a ClusterIP Service to expose the PostgreSQL database internally
 apiVersion: v1
 kind: Service
 metadata:
-  name: db
+  name: db  # The name will act as a DNS entry: other pods can access PostgreSQL at 'db:5432'
 spec:
   selector:
-    app: postgres
+    app: postgres  # Route to pods with this label (from postgres.yaml)
   ports:
-  - port: 5432
-    targetPort: 5432
+    - port: 5432        # Port exposed to other services in the cluster
+      targetPort: 5432  # Port the PostgreSQL container listens on
