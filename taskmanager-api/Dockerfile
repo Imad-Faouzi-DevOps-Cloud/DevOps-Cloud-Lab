@@ -29,3 +29,15 @@ EXPOSE 8000
 
 # Using CMD to run the FastAPI app using uvicorn — production-friendly setup
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Always use psycopg2 (not -binary) + install libpq-dev for production-grade setups.
+
+# Use separate COPY requirements.txt to cache dependencies and speed up builds.
+
+# Clean apt cache and use --no-cache-dir to reduce image size and vulnerabilities.
+
+# Set environment variables to ensure predictable logs and cleaner containers.
+
+# Base image should be minimal (slim) unless tooling/debugging is needed.
+
+
