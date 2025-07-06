@@ -1,31 +1,15 @@
-# Define a Kubernetes Service to expose the FastAPI app
-apiVersion: v1
-kind: Service
-metadata:
-  name: taskmanager-api-service
-spec:
-  type: LoadBalancer  # Expose externally via cloud load balancer (used in GCP, AWS, etc.)
-  selector:
-    app: taskmanager-api  # Link this service to the pods with matching labels
-  ports:
-    - protocol: TCP
-      port: 80  # Expose port 80 outside
-      targetPort: 8000  # Redirect to container port running FastAPI
-
----
-
-# Define the Kubernetes Deployment that runs the application pods
+# Define the Kubernetes Deployment that runs the TaskManager API application
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: taskmanager-api
 spec:
   replicas: 2  # Run two pods for high availability and basic load balancing
-  revisionHistoryLimit: 1  # Keep only the last version of deployment history (less disk usage)
+  revisionHistoryLimit: 1  # Keep only the last version of deployment history (for smaller rollout history)
 
   selector:
     matchLabels:
-      app: taskmanager-api  # Target pods that have this label
+      app: taskmanager-api  # Match pods with this label
 
   template:
     metadata:
@@ -35,24 +19,24 @@ spec:
     spec:
       containers:
       - name: taskmanager-api
-        image: gcr.io/devops-lab-464007/taskmanager-api  # Pull image from Google Container Registry (GCP)
+        image: gcr.io/devops-lab-464007/taskmanager-api  # Pull image from your GCR registry (CI/CD must push to this tag)
         ports:
-        - containerPort: 8000  # Match the app's internal listening port
+        - containerPort: 8000  # The app runs on port 8000 inside the container
 
         env:
           - name: DATABASE_URL
-            value: "postgresql://postgres:postgres@db:5432/postgres"  # DB connection string
+            value: "postgresql://postgres:postgres@db:5432/postgres"  # DB connection string for backend
           - name: JWT_SECRET_KEY
-            value: "supersecretkey"  # Secret for auth (ideally should be a Kubernetes Secret)
+            value: "supersecretkey"  # Secret for JWT (should be moved to a Kubernetes Secret in prod)
 
-        readinessProbe:  # Check if the app is ready to receive traffic
+        readinessProbe:  # Tell Kubernetes when the app is ready to serve traffic
           httpGet:
             path: /health
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 10
 
-        livenessProbe:  # Check if the app is still alive, or restart the pod
+        livenessProbe:  # Tell Kubernetes how to detect if the app is stuck and needs a restart
           httpGet:
             path: /health
             port: 8000
