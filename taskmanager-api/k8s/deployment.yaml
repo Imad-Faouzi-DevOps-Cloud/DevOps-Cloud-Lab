@@ -25,9 +25,17 @@ spec:
 
         env:
           - name: DATABASE_URL
-            value: "postgresql://postgres:postgres@db:5432/postgres"  # DB connection string for backend
-          - name: JWT_SECRET_KEY
-            value: "supersecretkey"  # Secret for JWT (should be moved to a Kubernetes Secret in prod)
+            valueFrom:
+              secretKeyRef:
+                name: taskmanager-secrets
+                key: database-url
+
+         - name: JWT_SECRET_KEY
+           valueFrom:
+            secretKeyRef:
+              name: taskmanager-secrets
+              key: jwt-secret-key
+
 
         readinessProbe:  # Tell Kubernetes when the app is ready to serve traffic
           httpGet:
