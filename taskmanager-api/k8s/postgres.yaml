@@ -23,7 +23,11 @@ spec:
             - name: POSTGRES_USER
               value: "postgres"
             - name: POSTGRES_PASSWORD
-              value: "postgres"  # Replace with Kubernetes Secret in real environments
+              valueFrom:
+                secretKeyRef:
+                  name: taskmanager-secrets
+                  key: postgres-password
+
 
           ports:
             - containerPort: 5432  # Default PostgreSQL port
