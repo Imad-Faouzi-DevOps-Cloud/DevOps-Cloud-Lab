@@ -171,24 +171,24 @@ pipeline {
 def deployToGKE(env) {
     dir('taskmanager-api') {
         withCredentials([file(credentialsId: 'GKE_CREDENTIALS', variable: 'GCLOUD_KEY')]) {
+            def IMAGE_TAG = GIT_COMMIT.take(7)
             sh """
-            set -e
-            IMAGE_TAG=${GIT_COMMIT:0:7}
-            echo "Deploying to $env with image tag: $IMAGE_TAG"
-
-            gcloud auth activate-service-account --key-file=$GCLOUD_KEY
-            gcloud config set project ${GCP_PROJECT}
-            gcloud container clusters get-credentials ${GCP_CLUSTER} --zone ${GCP_ZONE}
-
-            kubectl apply -f k8s/deployment.yaml
-            kubectl apply -f k8s/service.yaml
-            kubectl set image deployment/taskmanager-api taskmanager-api=gcr.io/${GCP_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG}
-            kubectl rollout status deployment/taskmanager-api
-
-            kubectl get rs -l app=taskmanager-api --sort-by=.metadata.creationTimestamp \
-              | awk 'NR>1 {print \$1}' \
-              | head -n -1 \
-              | xargs -r kubectl delete rs || true
+                set -e
+                echo "Deploying to ${env} with image tag: ${IMAGE_TAG}"
+            
+                gcloud auth activate-service-account --key-file=$GCLOUD_KEY
+                gcloud config set project ${GCP_PROJECT}
+                gcloud container clusters get-credentials ${GCP_CLUSTER} --zone ${GCP_ZONE}
+            
+                kubectl apply -f k8s/deployment.yaml
+                kubectl apply -f k8s/service.yaml
+                kubectl set image deployment/taskmanager-api taskmanager-api=gcr.io/${GCP_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG}
+                kubectl rollout status deployment/taskmanager-api
+            
+                kubectl get rs -l app=taskmanager-api --sort-by=.metadata.creationTimestamp \
+                  | awk 'NR>1 {print \$1}' \
+                  | head -n -1 \
+                  | xargs -r kubectl delete rs || true
             """
         }
     }
