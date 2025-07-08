@@ -54,7 +54,7 @@ pipeline {
                     . venv/bin/activate
                     export PYTHONPATH=$(pwd)
                     echo "Running unit tests..."
-                    //pytest tests/unit --junitxml=unit-test-results.xml
+                    // pytest tests/unit --junitxml=unit-test-results.xml
                     '''
                 }
             }
