@@ -1,10 +1,16 @@
 # app/config.py
 
+import os
 from pydantic_settings import BaseSettings
 from pydantic import Field, ConfigDict
 
+
 class Settings(BaseSettings):
-    model_config = ConfigDict(env_file=".env", extra="forbid")  # strict validation
+    # Dynamically set the env file based on the ENVIRONMENT variable
+    model_config = ConfigDict(
+        env_file=".env.test" if os.getenv("ENVIRONMENT") == "test" else ".env",
+        extra="forbid"
+    )
 
     # Required variables
     DATABASE_URL: str = Field(..., env="DATABASE_URL")
@@ -14,7 +20,6 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # Include these if you're using them elsewhere
     ENVIRONMENT: str = Field(..., env="ENVIRONMENT")
     APP_HOST: str = Field(..., env="APP_HOST")
     APP_PORT: int = Field(..., env="APP_PORT")
@@ -27,5 +32,6 @@ class Settings(BaseSettings):
 
     LOG_LEVEL: str = Field(..., env="LOG_LEVEL")
     RELOAD: bool = Field(..., env="RELOAD")
+
 
 settings = Settings()
