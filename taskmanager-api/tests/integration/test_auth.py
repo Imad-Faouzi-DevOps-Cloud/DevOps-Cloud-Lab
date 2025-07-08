@@ -13,8 +13,8 @@ async def test_register_login():
             "username": "testuser"
         })
         if register_response.status_code != 201:
-        print("Registration failed:", register_response.status_code)
-        print(register_response.json())
+            print("Registration failed:", register_response.status_code)
+            print(register_response.json())
         assert register_response.status_code == 201
 
         # Test login
