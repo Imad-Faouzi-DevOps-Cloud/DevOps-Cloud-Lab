@@ -41,57 +41,53 @@ pipeline {
                     sh '''
                     . venv/bin/activate
                     echo "Running flake8..."
-                    flake8 app tests || true  # avoid failing pipeline for now
+                    flake8 app tests || true
                     '''
                 }
             }
         }
 
-        stage('Run Tests') {
-            parallel {
-                stage('Unit Tests') {
-                    steps {
-                        dir('taskmanager-api') {
+        stage('Unit Tests') {
+            steps {
+                dir('taskmanager-api') {
+                    sh '''
+                    . venv/bin/activate
+                    export PYTHONPATH=$(pwd)
+                    echo "Running unit tests..."
+                    pytest tests/unit --junitxml=unit-test-results.xml
+                    '''
+                }
+            }
+        }
+
+        stage('Integration Tests') {
+            steps {
+                dir('taskmanager-api') {
+                    script {
+                        try {
                             sh '''
+                            echo "Starting test PostgreSQL container..."
+                            docker run -d \
+                              --name test-postgres \
+                              -e POSTGRES_USER=testuser \
+                              -e POSTGRES_PASSWORD=testpass \
+                              -e POSTGRES_DB=testdb \
+                              -p 5432:5432 \
+                              postgres:13
+
+                            echo "Waiting for PostgreSQL to become ready..."
+                            until pg_isready -h localhost -p 5432; do
+                              sleep 1
+                            done
+
+                            echo "Running integration tests..."
                             . venv/bin/activate
                             export PYTHONPATH=$(pwd)
-                            echo "Running unit tests..."
-                            
+                            DATABASE_URL="postgresql://testuser:testpass@localhost:5432/testdb" \
+                            pytest tests/integration --junitxml=integration-test-results.xml
                             '''
-                        }
-                    }
-                }
-
-                stage('Integration Tests') {
-                    steps {
-                        dir('taskmanager-api') {
-                            script {
-                                try {
-                                    sh '''
-                                    echo "Starting PostgreSQL for integration tests..."
-                                    docker run -d \
-                                      --name test-postgres \
-                                      -e POSTGRES_USER=testuser \
-                                      -e POSTGRES_PASSWORD=testpass \
-                                      -e POSTGRES_DB=testdb \
-                                      -p 5432:5432 \
-                                      postgres:13
-
-                                    echo "Waiting for PostgreSQL to become ready..."
-                                    until pg_isready -h localhost -p 5432; do
-                                      sleep 1
-                                    done
-
-                                    echo "Running integration tests..."
-                                    . venv/bin/activate
-                                    export PYTHONPATH=$(pwd)
-                                    DATABASE_URL="postgresql://testuser:testpass@localhost:5432/testdb" \
-                                    pytest tests/integration --maxfail=1 --disable-warnings -q || true  # avoid failing pipeline for now
-                                    '''
-                                } finally {
-                                    sh 'docker rm -f test-postgres || true'
-                                }
-                            }
+                        } finally {
+                            sh 'docker rm -f test-postgres || true'
                         }
                     }
                 }
@@ -103,7 +99,9 @@ pipeline {
                 dir('taskmanager-api') {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
                         script {
-                            dockerImage = docker.build("${DOCKERHUB_USER}/${IMAGE_NAME}:${VERSION}", '.')
+                            docker.withRegistry('', 'dockerhub-creds') {
+                                dockerImage = docker.build("${DOCKERHUB_USER}/${IMAGE_NAME}:${VERSION}", "--cache-from ${DOCKERHUB_USER}/${IMAGE_NAME}:latest .")
+                            }
                         }
                     }
                 }
@@ -133,58 +131,65 @@ pipeline {
             }
         }
 
-        stage('Deploy to GKE') {
+        stage('Deploy to Staging') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                deployToGKE("staging")
+            }
+        }
+
+        stage('Deploy to Production') {
             when {
                 branch 'main'
             }
             steps {
-                dir('taskmanager-api') {
-                    withCredentials([file(credentialsId: 'GKE_CREDENTIALS', variable: 'GCLOUD_KEY')]) {
-                        script {
-                            sh '''#!/bin/bash
-                            set -e  # Exit immediately if a command exits with a non-zero status
-        
-                            IMAGE_TAG=${GIT_COMMIT:0:7}
-        
-                            echo "Using image tag: $IMAGE_TAG"
-        
-                            gcloud auth activate-service-account --key-file=$GCLOUD_KEY
-                            gcloud config set project ${GCP_PROJECT}
-                            gcloud container clusters get-credentials ${GCP_CLUSTER} --zone ${GCP_ZONE}
-        
-                            kubectl apply -f k8s/deployment.yaml
-                            kubectl apply -f k8s/service.yaml
-        
-                            kubectl set image deployment/taskmanager-api taskmanager-api=gcr.io/${GCP_PROJECT}/taskmanager-api:$IMAGE_TAG
-        
-                            kubectl rollout status deployment/taskmanager-api
-
-                            # Delete old ReplicaSets (keep only the latest 1)
-                            # Prevent failure if nothing to delete
-                            kubectl get rs -l app=taskmanager-api --sort-by=.metadata.creationTimestamp \
-                              | awk 'NR>1 {print $1}' \
-                              | head -n -1 \
-                              | xargs -r kubectl delete rs || true
-
-
-                            '''
-                        }
-                    }
-                }
+                deployToGKE("production")
             }
         }
     }
 
-
     post {
         always {
+            archiveArtifacts artifacts: '**/test-results.xml', allowEmptyArchive: true
+            junit '**/test-results.xml'
             cleanWs()
         }
         success {
-            echo "✅ Build, test, and deploy completed successfully!"
+            echo "✅ CI/CD pipeline succeeded."
+            // Optional Slack/Email notification here
         }
         failure {
-            echo "❌ Pipeline failed. Please check the logs."
+            echo "❌ CI/CD pipeline failed."
+            // Optional Slack/Email notification here
+        }
+    }
+}
+
+// Shared deployment function
+def deployToGKE(env) {
+    dir('taskmanager-api') {
+        withCredentials([file(credentialsId: 'GKE_CREDENTIALS', variable: 'GCLOUD_KEY')]) {
+            sh """
+            set -e
+            IMAGE_TAG=${GIT_COMMIT:0:7}
+            echo "Deploying to $env with image tag: $IMAGE_TAG"
+
+            gcloud auth activate-service-account --key-file=$GCLOUD_KEY
+            gcloud config set project ${GCP_PROJECT}
+            gcloud container clusters get-credentials ${GCP_CLUSTER} --zone ${GCP_ZONE}
+
+            kubectl apply -f k8s/deployment.yaml
+            kubectl apply -f k8s/service.yaml
+            kubectl set image deployment/taskmanager-api taskmanager-api=gcr.io/${GCP_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG}
+            kubectl rollout status deployment/taskmanager-api
+
+            kubectl get rs -l app=taskmanager-api --sort-by=.metadata.creationTimestamp \
+              | awk 'NR>1 {print \$1}' \
+              | head -n -1 \
+              | xargs -r kubectl delete rs || true
+            """
         }
     }
 }
