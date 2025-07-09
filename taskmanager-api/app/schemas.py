@@ -1,10 +1,9 @@
-# app/schemas.py
-
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from enum import Enum
 from datetime import datetime
 
+# Enums for roles and status
 class RoleEnum(str, Enum):
     user = "user"
     admin = "admin"
@@ -15,38 +14,39 @@ class StatusEnum(str, Enum):
     resolved = "resolved"
     archived = "archived"
 
-# User schema
+# Shared config for ORM compatibility
+class ORMBase(BaseModel):
+    class Config:
+        orm_mode = True
+
+# --- User Schemas ---
+
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
-class UserOut(BaseModel):
+class UserOut(ORMBase):
     id: int
     email: EmailStr
     role: RoleEnum
 
-    class Config:
-        orm_mode = True
-
-# Token schema
+# --- Token Schema ---
 class Token(BaseModel):
     access_token: str
     token_type: str
 
-# Ticket creation
+# --- Ticket Schemas ---
+
 class TicketCreate(BaseModel):
     title: str
     description: Optional[str] = None
     priority: Optional[str] = "low"
 
-# Ticket display
-class TicketOut(BaseModel):
+class TicketOut(ORMBase):
     id: int
     title: str
     description: Optional[str]
     priority: str
     status: StatusEnum
     created_at: datetime
-
-    class Config:
-        orm_mode = True
+    owner_id: int  # Useful for test assertions
