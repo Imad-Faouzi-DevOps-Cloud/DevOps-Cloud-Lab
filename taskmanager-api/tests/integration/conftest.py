@@ -1,14 +1,14 @@
 # tests/integration/conftest.py
 
-import pytest
+import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
 from app.config import settings
-from app.database import Base
+from app.database import Base  # <-- ⛏️ Ajouté pour faire fonctionner drop_all/create_all
 from app.main import app
 
 # ✅ Ensure we’re using the test environment
-@pytest.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session", autouse=True)
 async def setup_test_db():
     assert settings.ENVIRONMENT == "test", "Not using test environment!"
 
@@ -26,9 +26,8 @@ async def setup_test_db():
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
-
 # ✅ Provide a test HTTP client using FastAPI's ASGI app
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client():
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
