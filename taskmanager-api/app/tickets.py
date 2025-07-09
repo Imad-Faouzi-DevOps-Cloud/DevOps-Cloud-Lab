@@ -1,17 +1,17 @@
 # app/routes/tickets.py
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker, declarative_base
 from typing import List
 from app import models, schemas
-from app.database import SessionLocal
 from app.deps import get_current_user
 
 router = APIRouter()
 
 # Dependency to get DB session
 def get_db():
-    db = SessionLocal()
+    db = AsyncSessionLocal()()
     try:
         yield db
     finally:
