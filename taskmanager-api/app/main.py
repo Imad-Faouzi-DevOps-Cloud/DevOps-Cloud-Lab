@@ -4,9 +4,6 @@ from fastapi import FastAPI
 from app.routes import auth, tickets
 from app.database import Base, engine
 
-# Create DB tables automatically
-Base.metadata.create_all(bind=engine)
-
 # Initialize FastAPI app
 app = FastAPI(title="Support Ticket API")
 
