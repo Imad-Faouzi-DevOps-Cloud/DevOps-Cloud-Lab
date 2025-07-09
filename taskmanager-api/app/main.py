@@ -2,7 +2,6 @@
 
 from fastapi import FastAPI
 from app.routes import auth, tickets
-from app.database import Base, engine
 
 # Initialize FastAPI app
 app = FastAPI(title="Support Ticket API")
