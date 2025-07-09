@@ -1,32 +1,35 @@
 # app/routes/tickets.py
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from typing import List
+
 from app import models, schemas
-from app.database import AsyncSessionLocal
-from app.deps import get_current_user
+from app.deps import get_db, get_current_user  # ✅ Use shared async dependencies
 
 router = APIRouter()
 
-# Dependency to get DB session
-def get_db():
-    db = AsyncSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# Create a ticket
-@router.post("/",status_code=201, response_model=schemas.TicketOut)
-def create_ticket(ticket: schemas.TicketCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+# ✅ Async route to create a ticket
+@router.post("/", status_code=201, response_model=schemas.TicketOut)
+async def create_ticket(
+    ticket: schemas.TicketCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
     new_ticket = models.Ticket(**ticket.dict(), owner_id=current_user.id)
     db.add(new_ticket)
-    db.commit()
-    db.refresh(new_ticket)
+    await db.commit()
+    await db.refresh(new_ticket)
     return new_ticket
 
-# List all tickets for current user
+# ✅ Async route to list tickets for current user
 @router.get("/", response_model=List[schemas.TicketOut])
-def get_my_tickets(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    return db.query(models.Ticket).filter(models.Ticket.owner_id == current_user.id).all()
+async def get_my_tickets(
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(models.Ticket).where(models.Ticket.owner_id == current_user.id)
+    )
+    return result.scalars().all()
