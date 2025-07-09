@@ -1,5 +1,3 @@
-# app/models.py-Users&ticket models
-
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -26,7 +24,10 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(Enum(RoleEnum), default=RoleEnum.user)
 
-    tickets = relationship("Ticket", back_populates="owner")
+    tickets = relationship("Ticket", back_populates="owner", cascade="all, delete")
+
+    def __repr__(self):
+        return f"<User(id={self.id}, email='{self.email}', role='{self.role}')>"
 
 class Ticket(Base):
     __tablename__ = "tickets"
@@ -38,5 +39,8 @@ class Ticket(Base):
     status = Column(Enum(StatusEnum), default=StatusEnum.open)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    owner_id = Column(Integer, ForeignKey("users.id"))
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     owner = relationship("User", back_populates="tickets")
+
+    def __repr__(self):
+        return f"<Ticket(id={self.id}, title='{self.title}', status='{self.status}')>"
