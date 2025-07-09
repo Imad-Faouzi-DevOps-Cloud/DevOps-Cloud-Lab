@@ -2,7 +2,6 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_ticket_flow(client):
-    async with client as ac:
         await ac.post("/auth/register", json={
             "email": "ticketuser@example.com",
             "password": "password123",
