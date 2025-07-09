@@ -1,15 +1,13 @@
-# app/database.py-db stetup
- 
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker, declarative_base
 from app.config import settings
 
-# Create DB engine from env
-engine = create_engine(settings.DATABASE_URL)
+# Use async engine
+engine = create_async_engine(settings.DATABASE_URL, echo=True)
 
-# Local session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Async session
+AsyncSessionLocal = sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False
+)
 
-# Base class for models
 Base = declarative_base()
