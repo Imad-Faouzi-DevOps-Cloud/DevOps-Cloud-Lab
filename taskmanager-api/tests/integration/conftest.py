@@ -2,6 +2,7 @@
 
 import pytest_asyncio
 from httpx import AsyncClient
+from httpx import ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine
 from app.config import settings
 from app.database import Base  # <-- ⛏️ Ajouté pour faire fonctionner drop_all/create_all
@@ -29,5 +30,6 @@ async def setup_test_db():
 # ✅ Provide a test HTTP client using FastAPI's ASGI app
 @pytest_asyncio.fixture
 async def client():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    transport = ASGITransport(app=app, lifespan="on")
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
