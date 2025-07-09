@@ -2,7 +2,6 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_register_login(client):
-    async with client as ac:
         register_response = await ac.post("/auth/register", json={
             "email": "testuser@example.com",
             "password": "password123",
