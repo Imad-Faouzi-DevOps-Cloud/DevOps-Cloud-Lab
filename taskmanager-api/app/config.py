@@ -1,4 +1,13 @@
+from dotenv import load_dotenv
 import os
+
+# Load correct .env file early and manually
+if os.environ.get("ENVIRONMENT") == "test":
+    load_dotenv(".env.test")
+else:
+    load_dotenv(".env")
+
+
 from pydantic_settings import BaseSettings
 from pydantic import Field
 
