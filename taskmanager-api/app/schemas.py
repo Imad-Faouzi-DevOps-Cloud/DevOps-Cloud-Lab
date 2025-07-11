@@ -50,3 +50,7 @@ class TicketOut(ORMBase):
     status: StatusEnum
     created_at: datetime
     owner_id: int  # Useful for test assertions
+
+    class Config:
+        orm_mode = True
+        use_enum_values = True  # <-- ADD THIS
