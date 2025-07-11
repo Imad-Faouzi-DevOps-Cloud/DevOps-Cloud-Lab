@@ -9,7 +9,6 @@ class Settings(BaseSettings):
     model_config = ConfigDict(
         env_file=".env.test" if os.getenv("ENVIRONMENT") == "test" else ".env",
         extra="forbid"
-        extra="forbid",
     )
 
     # Required variables
