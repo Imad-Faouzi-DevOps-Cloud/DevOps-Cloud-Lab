@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     # Required variables
     # Required env vars
+    TEST_DATABASE_URL: str | None = Field(None, env="TEST_DATABASE_URL")
     DATABASE_URL: str = Field(..., env="DATABASE_URL")
     JWT_SECRET_KEY: str = Field(..., env="JWT_SECRET_KEY")
 
