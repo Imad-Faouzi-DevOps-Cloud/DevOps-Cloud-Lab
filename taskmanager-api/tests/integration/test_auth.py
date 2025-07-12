@@ -12,7 +12,7 @@ async def test_register_login():
             "password": "password123",
             "username": "testuser"
         })
-        print(await register_response.json())
+        print(register_response.json())
         assert register_response.status_code == 201
 
         # Test login
