@@ -64,6 +64,9 @@ pipeline {
             steps {
                 dir('taskmanager-api') {
                     script {
+                        sh '''
+                        cp secrets.yaml $WORKSPACE/taskmanager-api/
+                        '''
                         try {
                             sh '''
                             echo "Starting test PostgreSQL container..."
