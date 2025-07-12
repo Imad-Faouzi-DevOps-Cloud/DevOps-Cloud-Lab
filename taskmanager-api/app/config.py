@@ -8,7 +8,7 @@ import yaml
 from pathlib import Path
 
 # Load secrets.yaml if present (e.g., during CI or local dev)
-secrets_path = Path(__file__).parent.parent / "secrets.yaml"  # Adjust if needed
+secrets_path = Path(__file__).parent.parent / "k8s" / "secrets.yaml"
 if secrets_path.exists():
     with secrets_path.open() as f:
         secrets = yaml.safe_load(f)
