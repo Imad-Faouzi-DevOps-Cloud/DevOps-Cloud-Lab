@@ -63,6 +63,10 @@ pipeline {
         stage('Integration Tests') {
             steps {
                 dir('taskmanager-api') {
+                withCredentials([
+                    string(credentialsId: 'DATABASE_URL', variable: 'DATABASE_URL'),
+                    string(credentialsId: 'JWT_SECRET_KEY', variable: 'JWT_SECRET_KEY')
+            ]) {
                     script {
                         try {
                             sh '''
