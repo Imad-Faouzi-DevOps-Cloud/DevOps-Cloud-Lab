@@ -7,6 +7,14 @@ import os
 import yaml
 from pathlib import Path
 
+# Load secrets.yaml if present (e.g., during CI or local dev)
+secrets_path = Path(__file__).parent.parent / "secrets.yaml"  # Adjust if needed
+if secrets_path.exists():
+    with secrets_path.open() as f:
+        secrets = yaml.safe_load(f)
+        for key, value in secrets.items():
+            os.environ[key.upper()] = str(value)
+
 class Settings(BaseSettings):
     model_config = ConfigDict(env_file=".env", extra="forbid")  # strict validation
 
@@ -32,13 +40,6 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = Field(..., env="LOG_LEVEL")
     RELOAD: bool = Field(..., env="RELOAD")
 
-    # Load secrets.yaml if present (e.g., during CI or local dev)
-    secrets_path = Path(__file__).parent.parent / "secrets.yaml"  # Adjust if needed
-    if secrets_path.exists():
-        with secrets_path.open() as f:
-            secrets = yaml.safe_load(f)
-            for key, value in secrets.items():
-                os.environ[key.upper()] = str(value)
 
 
 settings = Settings()
