@@ -66,6 +66,8 @@ pipeline {
                     script {
                         try {
                             sh '''
+                            . venv/bin/activate
+                            pip install pyyaml
                             echo "Starting test PostgreSQL container..."
                             docker run -d \
                               --name test-postgres \
