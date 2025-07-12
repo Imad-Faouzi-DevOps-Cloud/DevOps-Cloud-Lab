@@ -54,7 +54,7 @@ pipeline {
                     . venv/bin/activate
                     export PYTHONPATH=$(pwd)
                     echo "Running unit tests..."
-                    # pytest tests/unit --junitxml=unit-test-results.xml
+                    pytest tests/unit --junitxml=unit-test-results.xml
                     '''
                 }
             }
@@ -154,8 +154,8 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: '**/test-results.xml', allowEmptyArchive: true
-            junit '**/test-results.xml'
+            archiveArtifacts artifacts: '**/*-test-results.xml', allowEmptyArchive: true
+            junit '**/*-test-results.xml'
             cleanWs()
         }
         success {
