@@ -3,4 +3,5 @@ This project simulates a 6-month DevOps consulting assignment performed as part 
 
 The mission involved building the infrastructure and deployment pipeline for a ticket management system (TaskManager) developed in FastAPI, and making it production-ready using real-world DevOps practices.
 
+z
 
