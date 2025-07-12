@@ -89,6 +89,7 @@ pipeline {
                             echo "Running integration tests..."
                             . venv/bin/activate
                             export PYTHONPATH=$(pwd)
+                            DATABASE_URL="postgresql://testuser:testpass@localhost:5432/testdb" \
                             pytest tests/integration --junitxml=integration-test-results.xml
                             '''
                         } finally {
