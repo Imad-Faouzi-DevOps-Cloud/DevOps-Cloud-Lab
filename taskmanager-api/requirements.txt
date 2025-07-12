@@ -15,3 +15,5 @@ httpx>=0.24.0
 
 flake8>=6.0.0
 
+pyyaml
+
