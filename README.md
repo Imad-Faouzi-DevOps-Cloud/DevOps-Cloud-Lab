@@ -1,4 +1,4 @@
-# DevOps & Cloud Mini Projects 🚀
+# DevOps & Cloud Projects 🚀
 
 This repository gathers my series of projects designed to practice and showcase DevOps, Cloud, and automation skills.  
 Each folder contains an independent project with its own code, configuration, and README.
