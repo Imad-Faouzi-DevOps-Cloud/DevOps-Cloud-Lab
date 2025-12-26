@@ -1,6 +1,5 @@
 pipeline {
     agent any
-
     environment {
         IMAGE_NAME = "taskmanager-api"
         DOCKER_REGISTRY = "docker.io"
