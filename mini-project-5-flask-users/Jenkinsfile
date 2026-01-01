@@ -63,7 +63,6 @@ stage('Push Docker Image') {
     }
 }
 
-
         stage('Deploy') {
             when {
                 branch 'main'
